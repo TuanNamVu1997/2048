@@ -19,20 +19,20 @@ function Tile({ value, id, col, row }: TileProps) {
   let base = Math.log(innerValue) / Math.log(2);
 
   const numberOfDigits = value.toString().length;
-  let fontSize = 80;
+  let fontSize = 60;
   if (numberOfDigits > 4) {
-    fontSize = 40;
+    fontSize = 24;
   } else if (numberOfDigits > 3) {
-    fontSize = 50;
+    fontSize = 30;
   } else if (numberOfDigits > 2) {
-    fontSize = 60;
+    fontSize = 50;
   }
   return (
     <div
       key={id}
       style={{
-        left: 132 * col,
-        top: 132 * row,
+        left:84 * col,
+        top: 84* row,
         backgroundColor: styles[base] ? styles[base].bg : '#ffa07a',
         fontSize: fontSize,
         color: '#333',

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useSwipeable } from 'react-swipeable';
 import { TileProps, Cell } from './Tile';
+import { setSourceMapRange } from 'typescript';
 
 interface TilesHandlerProps {
   children: React.ReactNode;
@@ -26,6 +27,14 @@ export function getRandomTile(length: number, _tiles: TileProps[] = []): TilePro
 function TilesHandler({ children, vectorLength, onTilesChange, tiles }: TilesHandlerProps) {
   const handlers = useSwipeable({ onSwiped: (e) => handleMovement(e.dir) });
   const [end, setEnd] = useState(false);
+  const [score, setScore] = useState(0);
+  const [highScore, setHighscore] = useState(0);
+
+  useEffect(() => {
+    if (score > highScore) {
+      setHighscore(score);
+    }
+  }, [score, highScore]);
 
   function updateVector(newTiles: TileProps[], idx: number, type: keyof Cell, reverse?: boolean) {
     const tilesInVector = tiles.filter((tile) => tile[type] === idx);
@@ -36,15 +45,18 @@ function TilesHandler({ children, vectorLength, onTilesChange, tiles }: TilesHan
     }
     let counter = vectorLength - 1;
     let hasPredecessorMerged = false;
+    let scoreToAdd = 0;
 
     sortedTiles.forEach((tile, pos) => {
       let newIndex = reverse ? Math.abs(vectorLength - 1 - counter) : counter;
       const prevTile = sortedTiles[pos - 1];
       const nextTile = sortedTiles[pos + 1];
       if (prevTile && prevTile.value === tile.value && !hasPredecessorMerged) {
+        const newValue = tile.value * 16;
+        scoreToAdd += newValue;
         newTiles.push({
           ...tile,
-          value: tile.value * 2,
+          value: newValue,
           [oppositeVectorType]: newIndex,
         });
         counter--;
@@ -57,6 +69,7 @@ function TilesHandler({ children, vectorLength, onTilesChange, tiles }: TilesHan
         hasPredecessorMerged = false;
       }
     });
+    return scoreToAdd;
   }
   const haveTilesMoved = (prevTiles: TileProps[], newTiles: TileProps[]) =>
     JSON.stringify(newTiles) !== JSON.stringify(prevTiles);
@@ -78,13 +91,16 @@ function TilesHandler({ children, vectorLength, onTilesChange, tiles }: TilesHan
       }
     }
   }
-  function getTilesAfterMovement(direction: string, prevTiles: TileProps[]) {
+  function getTilesAfterMovement(direction: string, prevTiles: TileProps[], handleScore?: boolean) {
     const vector: keyof Cell = ['Right', 'Left'].includes(direction) ? 'row' : 'col';
     const reverse = ['Up', 'Left'].includes(direction);
-
+    let scoreToAdd = 0;
     let newTiles: TileProps[] = [];
     for (let i = 0; i < vectorLength; i++) {
-      updateVector(newTiles, i, vector, reverse);
+      scoreToAdd += updateVector(newTiles, i, vector, reverse);
+    }
+    if (handleScore) {
+      setScore((prevScore) => prevScore + scoreToAdd);
     }
 
     newTiles = prevTiles
@@ -94,7 +110,7 @@ function TilesHandler({ children, vectorLength, onTilesChange, tiles }: TilesHan
   }
 
   function handleMovement(direction: string) {
-    const newTiles = getTilesAfterMovement(direction, tiles);
+    const newTiles = getTilesAfterMovement(direction, tiles, true);
     updateTiles(newTiles);
   }
 
@@ -104,8 +120,31 @@ function TilesHandler({ children, vectorLength, onTilesChange, tiles }: TilesHan
     }
   }
 
+  function startNewGame() {
+    let initialTiles = [getRandomTile(vectorLength)];
+    initialTiles = [...initialTiles, getRandomTile(vectorLength, initialTiles)];
+    onTilesChange(initialTiles);
+    setScore(0);
+    setEnd(false);
+  }
+
   return (
     <div className="App" onKeyUp={handleKeyPress} tabIndex={0} {...handlers}>
+      <div className="score-container">
+        <span className="title">2048</span>
+        <div className="score">
+          <span>SCORE</span>
+          <span> {score}</span>
+        </div>
+        <div className="score">
+          <span>BEST</span>
+          <span> {highScore}</span>
+        </div>
+        <button className="btn" onClick={startNewGame}>
+          New Game
+        </button>
+      </div>
+
       {children}
       <span>{end && 'END'}</span>
     </div>
