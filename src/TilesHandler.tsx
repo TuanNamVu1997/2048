@@ -52,7 +52,7 @@ function TilesHandler({ children, vectorLength, onTilesChange, tiles }: TilesHan
       const prevTile = sortedTiles[pos - 1];
       const nextTile = sortedTiles[pos + 1];
       if (prevTile && prevTile.value === tile.value && !hasPredecessorMerged) {
-        const newValue = tile.value * 16;
+        const newValue = tile.value * 2;
         scoreToAdd += newValue;
         newTiles.push({
           ...tile,
